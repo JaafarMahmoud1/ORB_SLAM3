@@ -145,6 +145,11 @@ add_executable(rgbd_tum
         Examples/RGB-D/rgbd_tum.cc)
 target_link_libraries(rgbd_tum ${PROJECT_NAME})
 
+
+add_executable(rgbd_kinect
+        Examples/RGB-D/rgbd_kinect.cc)
+target_link_libraries(rgbd_kinect ${PROJECT_NAME})
+
 if(realsense2_FOUND)
     add_executable(rgbd_realsense_D435i
             Examples/RGB-D/rgbd_realsense_D435i.cc)
@@ -180,6 +185,12 @@ add_executable(stereo_zed2i
         Examples/Stereo/stereo_zed2i.cc)
 target_link_libraries(stereo_zed2i ${PROJECT_NAME})
 
+add_executable(stereo_zedx
+        Examples/Stereo/stereo_zedx.cc)
+target_link_libraries(stereo_zedx ${PROJECT_NAME})
+
+
+
 add_executable(stereo_tum_vi
         Examples/Stereo/stereo_tum_vi.cc)
 target_link_libraries(stereo_tum_vi ${PROJECT_NAME})
@@ -208,6 +219,10 @@ target_link_libraries(mono_kitti ${PROJECT_NAME})
 add_executable(mono_euroc
         Examples/Monocular/mono_euroc.cc)
 target_link_libraries(mono_euroc ${PROJECT_NAME})
+
+add_executable(mono_zed2i
+        Examples/Monocular/mono_zed2i.cc)
+target_link_libraries(mono_zed2i ${PROJECT_NAME})
 
 add_executable(mono_tum_vi
         Examples/Monocular/mono_tum_vi.cc)
@@ -250,6 +265,10 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/Stereo-Inertia
 add_executable(stereo_inertial_euroc
         Examples/Stereo-Inertial/stereo_inertial_euroc.cc)
 target_link_libraries(stereo_inertial_euroc ${PROJECT_NAME})
+
+add_executable(stereo_inertial_zedx
+        Examples/Stereo-Inertial/stereo_inertial_zedx.cc)
+target_link_libraries(stereo_inertial_zedx ${PROJECT_NAME})
 
 add_executable(stereo_inertial_tum_vi
         Examples/Stereo-Inertial/stereo_inertial_tum_vi.cc)

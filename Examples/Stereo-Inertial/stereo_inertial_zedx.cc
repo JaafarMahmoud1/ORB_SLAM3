@@ -34,9 +34,9 @@
 using namespace std;
 
 void LoadImages(const string &strPathLeft, const string &strPathRight, const string &strPathTimes,
-                vector<string> &vstrImageLeft, vector<string> &vstrImageRight, vector<double> &vTimeStamps);
+                vector<string> &vstrImageLeft, vector<string> &vstrImageRight, vector<long double> &vTimeStamps);
 
-void LoadIMU(const string &strImuPath, vector<double> &vTimeStamps, vector<cv::Point3f> &vAcc, vector<cv::Point3f> &vGyro);
+void LoadIMU(const string &strImuPath, vector<long double> &vTimeStamps, vector<cv::Point3f> &vAcc, vector<cv::Point3f> &vGyro);
 
 
 int main(int argc, char **argv)
@@ -61,9 +61,9 @@ int main(int argc, char **argv)
     int seq;
     vector< vector<string> > vstrImageLeft;
     vector< vector<string> > vstrImageRight;
-    vector< vector<double> > vTimestampsCam;
+    vector< vector<long double> > vTimestampsCam;
     vector< vector<cv::Point3f> > vAcc, vGyro;
-    vector< vector<double> > vTimestampsImu;
+    vector< vector<long double> > vTimestampsImu;
     vector<int> nImages;
     vector<int> nImu;
     vector<int> first_imu(num_seq,0);
@@ -87,13 +87,17 @@ int main(int argc, char **argv)
 
         string pathCam0 = pathSeq + "/mav0/cam0/data";
         string pathCam1 = pathSeq + "/mav0/cam1/data";
-        string pathImu = pathSeq + "/mav0/imu0/data.csv";
+        string pathImu = pathSeq + "/mav0/imu0/data/data.csv";
 
         LoadImages(pathCam0, pathCam1, pathTimeStamps, vstrImageLeft[seq], vstrImageRight[seq], vTimestampsCam[seq]);
         cout << "LOADED!" << endl;
 
         cout << "Loading IMU for sequence " << seq << "...";
         LoadIMU(pathImu, vTimestampsImu[seq], vAcc[seq], vGyro[seq]);
+        std::cout<<"vTimestampsImu size: "<<vTimestampsImu[seq].size()<<std::endl;
+        std::cout<<"vAcc size: "<<vAcc[seq].size()<<std::endl;
+        std::cout<<"vGyro size: "<<vGyro[seq].size()<<std::endl;
+
         cout << "LOADED!" << endl;
 
         nImages[seq] = vstrImageLeft[seq].size();
@@ -107,14 +111,20 @@ int main(int argc, char **argv)
         }
 
         // Find first imu to be considered, supposing imu measurements start first
-
-        while(vTimestampsImu[seq][first_imu[seq]]<=vTimestampsCam[seq][0])
+        std::cout<<vTimestampsImu[seq][first_imu[seq]]<<" "<<vTimestampsCam[seq][0]<<std::endl;
+        std::cout<<"========================================"<<std::endl;
+        while(vTimestampsImu[seq][first_imu[seq]]<=vTimestampsCam[seq][0]){
             first_imu[seq]++;
+        }
         first_imu[seq]--; // first imu measurement to be considered
+        if (first_imu[seq]<0){
+            first_imu[seq]=0;
+        }
     }
-
+    std::cout<<"first_imu size: "<<first_imu.size()<<std::endl;
     // Read rectification parameters
     cv::FileStorage fsSettings(argv[2], cv::FileStorage::READ);
+    std::cout<<"fsSettings.isOpened(): "<<fsSettings.isOpened()<<std::endl;
     if(!fsSettings.isOpened())
     {
         cerr << "ERROR: Wrong path to settings" << endl;
@@ -165,7 +175,10 @@ int main(int argc, char **argv)
 
             // Load imu measurements from previous frame
             vImuMeas.clear();
-
+            std::cout<<"first_imu: "<<first_imu[seq]<<std::endl;
+            std::cout<<"ni: "<<ni<<std::endl;
+            std::cout<< "vTimestampsImu[seq][first_imu[seq]]: "<<vTimestampsImu[seq][first_imu[seq]]<<std::endl;
+            std::cout<< "vTimestampsCam[seq][ni]: "<<vTimestampsCam[seq][ni]<<std::endl;
             if(ni>0)
                 while(vTimestampsImu[seq][first_imu[seq]]<=vTimestampsCam[seq][ni]) // while(vTimestampsImu[first_imu]<=vTimestampsCam[ni])
                 {
@@ -174,6 +187,7 @@ int main(int argc, char **argv)
                                                              vTimestampsImu[seq][first_imu[seq]]));
                     first_imu[seq]++;
                 }
+            std::cout<<"size of imu points: " << vImuMeas.size() << std::endl;
 
     #ifdef COMPILEDWITHC11
             std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
@@ -240,8 +254,67 @@ int main(int argc, char **argv)
     return 0;
 }
 
+// void LoadImages(const string &strPathLeft, const string &strPathRight, const string &strPathTimes,
+//                 vector<string> &vstrImageLeft, vector<string> &vstrImageRight, vector<double> &vTimeStamps)
+// {
+//     ifstream fTimes;
+//     std::cout<< "strPathLeft: " << strPathLeft << std::endl;
+//     std::cout<< "strPathRight: " << strPathRight << std::endl;
+//     std::cout<< "strPathTimes: " << strPathTimes << std::endl;
+//     fTimes.open(strPathTimes.c_str());
+//     vTimeStamps.reserve(5000);
+//     vstrImageLeft.reserve(5000);
+//     vstrImageRight.reserve(5000);
+//     while(!fTimes.eof())
+//     {
+//         string s;
+//         getline(fTimes,s);
+//         // std::cout<< "s: " << s << std::endl;
+//         if(!s.empty())
+//         {
+//             stringstream ss;
+//             ss << s;
+//             vstrImageLeft.push_back(strPathLeft + "/" + ss.str() + ".png");
+//             vstrImageRight.push_back(strPathRight + "/" + ss.str() + ".png");
+//             // std::cout << "vstrImageLeft: " << vstrImageLeft.back() << std::endl;
+//             // std::cout << "vstrImageRight: " << vstrImageRight.back() << std::endl;
+//             double t;
+//             ss >> t;
+//             vTimeStamps.push_back(t/1e9);
+//         }
+//     }
+// }
+
+// void LoadImages(const string &strPathLeft, const string &strPathRight, const string &strPathTimes,
+//                 vector<string> &vstrImageLeft, vector<string> &vstrImageRight, vector<long double> &vTimeStamps)
+// {
+//     ifstream fTimes;
+//     fTimes.open(strPathTimes.c_str());
+//     vTimeStamps.reserve(5000);
+//     vstrImageLeft.reserve(5000);
+//     vstrImageRight.reserve(5000);
+//     while(!fTimes.eof())
+//     {
+//         string s;
+//         getline(fTimes,s);
+//         if(!s.empty())
+//         {
+//             stringstream ss;
+//             ss << s;
+//             if (ss.str()[0] == '#')
+//                 continue;
+//             vstrImageLeft.push_back(strPathLeft + "/" + ss.str() + ".png");
+//             vstrImageRight.push_back(strPathRight + "/" + ss.str() + ".png");
+//             long double t;
+//             ss >> t;
+//             vTimeStamps.push_back(t/((long double)1e9));
+
+//         }
+//     }
+// }
+
 void LoadImages(const string &strPathLeft, const string &strPathRight, const string &strPathTimes,
-                vector<string> &vstrImageLeft, vector<string> &vstrImageRight, vector<double> &vTimeStamps)
+                vector<string> &vstrImageLeft, vector<string> &vstrImageRight, vector<long double> &vTimeStamps)
 {
     ifstream fTimes;
     fTimes.open(strPathTimes.c_str());
@@ -254,19 +327,31 @@ void LoadImages(const string &strPathLeft, const string &strPathRight, const str
         getline(fTimes,s);
         if(!s.empty())
         {
+            if (s[0] == '#')
+                continue;
             stringstream ss;
+            string ts, fileName;
             ss << s;
-            vstrImageLeft.push_back(strPathLeft + "/" + ss.str() + ".png");
-            vstrImageRight.push_back(strPathRight + "/" + ss.str() + ".png");
-            double t;
-            ss >> t;
-            vTimeStamps.push_back(t/1e9);
+            getline(ss, ts, ',');
+            getline(ss, fileName);
 
+            vstrImageLeft.push_back(strPathLeft + "/" + fileName);
+            vstrImageRight.push_back(strPathRight + "/" + fileName);
+            // std::cout << "vstrImageLeft: " << vstrImageLeft.back() << std::endl;
+            // std::cout << "vstrImageRight: " << vstrImageRight.back() << std::endl;
+            stringstream sst;
+            sst << ts;
+            long double t;
+            sst >> t;
+            // std::cout<< "t: " << t << std::endl;
+            vTimeStamps.push_back(t/((long double)1e9));
         }
     }
 }
 
-void LoadIMU(const string &strImuPath, vector<double> &vTimeStamps, vector<cv::Point3f> &vAcc, vector<cv::Point3f> &vGyro)
+
+
+void LoadIMU(const string &strImuPath, vector<long double> &vTimeStamps, vector<cv::Point3f> &vAcc, vector<cv::Point3f> &vGyro)
 {
     ifstream fImu;
     fImu.open(strImuPath.c_str());
@@ -295,7 +380,7 @@ void LoadIMU(const string &strImuPath, vector<double> &vTimeStamps, vector<cv::P
             item = s.substr(0, pos);
             data[6] = stod(item);
 
-            vTimeStamps.push_back(data[0]/1e9);
+            vTimeStamps.push_back(data[0]);
             vAcc.push_back(cv::Point3f(data[4],data[5],data[6]));
             vGyro.push_back(cv::Point3f(data[1],data[2],data[3]));
         }

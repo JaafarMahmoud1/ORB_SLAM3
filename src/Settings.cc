@@ -516,7 +516,6 @@ namespace ORB_SLAM3 {
 
         //Update bf
         bf_ = b_ * P1.at<double>(0,0);
-
         //Update relative pose between camera 1 and IMU if necessary
         if(sensor_ == System::IMU_STEREO){
             Eigen::Matrix3f eigenR_r1_u1;
